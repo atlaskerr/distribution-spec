@@ -786,8 +786,6 @@ If such a response is expected, one should use the pagination.
 #### Pagination
 
 Paginated tag results can be retrieved by adding the appropriate parameters to the request URL described above.
-The behavior of tag pagination is identical to that specified for catalog pagination.
-We cover a simple flow to highlight any differences.
 
 Starting a paginated flow may begin as follows:
 
