@@ -1,28 +1,26 @@
 package client
 
 import (
+	"errors"
 	"net/http"
 	"strings"
+)
 
-	ispec "github.com/opencontainers/image-spec/specs-go/v1"
+var (
+	// ErrUserAndToken is the error returned when username and token fields are
+	// defined in the Config struct at the same time.
+	ErrUserAndToken = errors.New("client cannot be configured with both user and token authentication")
+
+	// ErrNoEndpoint is the error returned when no endpoint is defined in the
+	// Config struct
+	ErrNoEndpoint = errors.New("no endpoint provided to client")
 )
 
 // Client is an interface that contains methods to interact with an registry
 // compliant with the OCI Distribution Specification.
 type Client interface {
-	Verify() bool
-
-	// GetManifest retrieves a manifest from a repository.
-	GetManifest(repo string, ref string) (ispec.Manifest, error)
-
-	// VerifyManifest checks to see if a manifest exists in a repository.
-	VerifyManifest(repo string, ref string) (bool, error)
-
-	// UploadManifest uploads a manifest to a repository.
-	UploadManifest(repo string, ref string, manifest ispec.Manifest) error
-
-	// DeleteManifest deletes a manifest from a repository.
-	DeleteManifest(repo string, ref string) error
+	SetEndpoint(url string)
+	SetCredential(cred Credential)
 }
 
 // Config defines configuration parameters for the client.
@@ -31,11 +29,46 @@ type Config struct {
 	// Endpoint is the URL of the registry.
 	Endpoint string
 
-	Credential Credential
+	Username string
+	Password string
+	Token    string
 }
 
 // New returns a new Client.
-func New(conf Config) (Client, error) {
+func New(conf *Config) (Client, error) {
+	var c *client
+
+	if &conf.Endpoint == nil {
+		return nil, ErrNoEndpoint
+	}
+	c.SetEndpoint(conf.Endpoint)
+
+	basicAuth := (&conf.Username != nil) && (&conf.Password != nil)
+	tokenAuth := &conf.Token != nil
+	switch {
+	case basicAuth && tokenAuth:
+		return nil, ErrUserAndToken
+	case basicAuth:
+		cred := &BasicCredential{}
+		c.SetCredential(cred)
+	case tokenAuth:
+		cred := &TokenCredential{}
+		c.SetCredential(cred)
+	}
+	return c, nil
+}
+
+type client struct {
+	endpoint   string
+	credential *Credential
+}
+
+func (c *client) SetCredential(cred Credential) {
+	c.credential = &cred
+}
+
+func (c *client) SetEndpoint(url string) {
+	c.endpoint = url
 }
 
 // Credential defines a methods to inject credentials into an HTTP request.
