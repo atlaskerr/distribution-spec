@@ -55,8 +55,6 @@ The goal of this specification is to standardize container image distribution ba
       - [PATCH Blob Upload](#patch-blob-upload)
       - [PUT Blob Upload](#put-blob-upload)
       - [DELETE Blob Upload](#delete-blob-upload)
-   - [Catalog](#catalog)
-      - [GET Catalog](#get-catalog)
 
 ## Notational Conventions
 
