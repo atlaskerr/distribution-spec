@@ -4607,42 +4607,6 @@ List a set of available repositories in the local registry cluster.
 Does not provide any indication of what may be available upstream.
 Applications can only determine if a repository is available but not if it is not available.
 
-#### GET Catalog
-
-Retrieve a sorted, json list of repositories available in the registry.
-
-##### Catalog Fetch
-
-```
-GET /v2/_catalog
-```
-
-Request an unabridged list of repositories available.
-The implementation may impose a maximum limit and return a partial set with pagination links.
-
-###### On Success: OK
-
-```
-200 OK
-Content-Length: <length>
-Content-Type: application/json; charset=utf-8
-
-{
-	"repositories": [
-		<name>,
-		...
-	]
-}
-```
-
-Returns the unabridged list of repositories as a json response.
-
-The following headers will be returned with the response:
-
-| Name             | Description                       |
-|------------------|-----------------------------------|
-| `Content-Length` | Length of the JSON response body. |
-
 ##### Catalog Fetch Paginated
 
 ```
