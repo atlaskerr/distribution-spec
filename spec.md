@@ -4601,12 +4601,6 @@ The error codes that may be included in the response body are enumerated below:
 |-------------------|-------------------|---------------------------------------------------------------------|
 | `TOOMANYREQUESTS` | too many requests | Returned when a client attempts to contact a service too many times |
 
-### Catalog (OPTIONAL)
-
-List a set of available repositories in the local registry cluster.
-Does not provide any indication of what may be available upstream.
-Applications can only determine if a repository is available but not if it is not available.
-
 ##### Catalog Fetch Paginated
 
 ```
