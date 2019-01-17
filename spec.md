@@ -690,46 +690,6 @@ The response format is as follows:
         ]
     }
 
-### Listing Repositories
-
-Images are stored in collections, known as a _repository_, which is keyed by a `name`, as seen throughout the API specification.
-A registry instance may contain several repositories.
-The list of available repositories is made available through the _catalog_.
-
-The catalog for a given registry can be retrieved with the following request:
-
-```
-GET /v2/_catalog
-```
-
-The response will be in the following format:
-
-```
-200 OK
-Content-Type: application/json
-
-{
-  "repositories": [
-    <name>,
-    ...
-  ]
-}
-```
-
-Note that catalog operations are optional for registry implementations.
-Contents of the response are specific to the registry implementation.
-Some registries may opt to provide a full catalog output, limit it based on the user's access level or omit upstream results, if providing mirroring functionality.
-Subsequently, the presence of a repository in the catalog listing only means that the registry *may* provide access to the repository at the time of the request.
-Conversely, a missing entry does *not* mean that the registry does not have the repository.
-More succinctly, the presence of a repository only guarantees that it is there but not that it is _not_ there.
-
-For registries with a large number of repositories, this response may be quite large.
-If such a response is expected, one should use pagination.
-A registry may also limit the amount of responses returned even if pagination was not explicitly requested.
-In this case the `Link` header will be returned along with the results, and subsequent results can be obtained by following the link as if pagination had been initially requested.
-
-For details of the `Link` header, please see the [_Pagination_](#pagination) section.
-
 #### Pagination
 
 Paginated catalog results can be retrieved by adding an `n` parameter to the request URL, declaring that the response should be limited to `n` results.
