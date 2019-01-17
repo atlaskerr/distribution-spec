@@ -1,8 +1,10 @@
 package client
 
 import (
+	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -19,7 +21,7 @@ var (
 // Client is an interface that contains methods to interact with an registry
 // compliant with the OCI Distribution Specification.
 type Client interface {
-	SetEndpoint(url string)
+	SetEndpoint(url string) error
 	SetCredential(cred Credential)
 }
 
@@ -58,8 +60,16 @@ func New(conf *Config) (Client, error) {
 	return c, nil
 }
 
+type httpClient interface {
+	Do(context.Context, operation) (*http.Response, error)
+}
+
+type operation interface {
+	HTTPRequest(url.URL) *http.Request
+}
+
 type client struct {
-	endpoint   string
+	endpoint   url.URL
 	credential *Credential
 }
 
@@ -67,8 +77,14 @@ func (c *client) SetCredential(cred Credential) {
 	c.credential = &cred
 }
 
-func (c *client) SetEndpoint(url string) {
-	c.endpoint = url
+func (c *client) SetEndpoint(endpoint string) error {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return err
+	}
+
+	c.endpoint = *u
+	return nil
 }
 
 // Credential defines a methods to inject credentials into an HTTP request.
