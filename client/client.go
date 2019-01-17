@@ -25,6 +25,19 @@ type Client interface {
 	DeleteManifest(repo string, ref string) error
 }
 
+// Config defines configuration parameters for the client.
+type Config struct {
+
+	// Endpoint is the URL of the registry.
+	Endpoint string
+
+	Credential Credential
+}
+
+// New returns a new Client.
+func New(conf Config) (Client, error) {
+}
+
 // Credential defines a methods to inject credentials into an HTTP request.
 type Credential interface {
 	Set(*http.Request)
@@ -52,19 +65,4 @@ type BasicCredential struct {
 // Set sets the authorization header of a request with a username and password.
 func (c *BasicCredential) Set(req *http.Request) {
 	req.SetBasicAuth(c.Username, c.Password)
-}
-
-// Config defines configuration parameters for the client.
-type Config struct {
-
-	// Endpoint is the URL of the registry.
-	Endpoint string
-
-	Credential Credential
-	Token      string
-
-	// Username is use to authenticat
-	Username string
-
-	Password string
 }
