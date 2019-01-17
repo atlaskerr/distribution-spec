@@ -870,7 +870,6 @@ A list of methods and URIs are covered in the table below:
 | PATCH  | `/v2/<name>/blobs/uploads/<uuid>`  | Blob Upload          | Upload a chunk of data for the specified upload.                                                                                                                                                                                         |
 | PUT    | `/v2/<name>/blobs/uploads/<uuid>`  | Blob Upload          | Complete the upload specified by `uuid`, optionally appending the body as the final chunk.                                                                                                                                               |
 | DELETE | `/v2/<name>/blobs/uploads/<uuid>`  | Blob Upload          | Cancel outstanding upload processes, releasing associated resources. If this is not called, the unfinished uploads will eventually timeout.                                                                                              |
-| GET    | `/v2/_catalog`                     | Catalog              | (OPTIONAL) Retrieve a sorted, json list of repositories available in the registry.                                                                                                                                                                  |
 
 The detail for each endpoint is covered in the following sections.
 
