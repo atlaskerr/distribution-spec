@@ -690,76 +690,6 @@ The response format is as follows:
         ]
     }
 
-#### Pagination
-
-Paginated catalog results can be retrieved by adding an `n` parameter to the request URL, declaring that the response should be limited to `n` results.
-Starting a paginated flow begins as follows:
-
-```
-GET /v2/_catalog?n=<integer>
-```
-
-The above specifies that a catalog response should be returned, from the start of
-the result set, ordered lexically, limiting the number of results to `n`.
-The response to such a request would look as follows:
-
-```
-200 OK
-Content-Type: application/json
-Link: <<url>?n=<n from the request>&last=<last repository in response>>; rel="next"
-
-{
-  "repositories": [
-    <name>,
-    ...
-  ]
-}
-```
-
-The above includes the _first_ `n` entries from the result set.
-To get the _next_ `n` entries, one can create a URL where the argument `last` has the value from `repositories[len(repositories)-1]`.
-If there are indeed more results, the URL for the next block is encoded in an [RFC5988](https://tools.ietf.org/html/rfc5988) `Link` header, as a "next" relation.
-The presence of the `Link` header communicates to the client that the entire result set has not been returned and another request must be issued.
-If the header is not present, the client can assume that all results have been received.
-
-> __NOTE:__ In the request template above, note that the brackets are required.
-> For example, if the url is `http://example.com/v2/_catalog?n=20&last=b`, the value of the header would be `<http://example.com/v2/_catalog?n=20&last=b>; rel="next"`.
-> Please see [RFC5988](https://tools.ietf.org/html/rfc5988) for details.
-
-Compliant client implementations should always use the `Link` header value when proceeding through results linearly.
-The client may construct URLs to skip forward in the catalog.
-
-To get the next result set, a client would issue the request as follows, using the URL encoded in the described `Link` header:
-
-```
-GET /v2/_catalog?n=<n from the request>&last=<last repository value from previous response>
-```
-
-The above process should then be repeated until the `Link` header is no longer set.
-
-The catalog result set is represented abstractly as a lexically sorted list, where the position in that list can be specified by the query term `last`.
-The entries in the response start _after_ the term specified by `last`, up to `n` entries.
-
-The behavior of `last` is quite simple when demonstrated with an example.
-Let us say the registry has the following repositories:
-
-```
-a
-b
-c
-d
-```
-
-If the value of `n` is 2, _a_ and _b_ will be returned on the first response.
-The `Link` header returned on the response will have `n` set to 2 and last set to _b_:
-
-```
-Link: <<url>?n=2&last=b>; rel="next"
-```
-
-The client can then issue the request with the above value from the `Link` header, receiving the values _c_ and _d_.
-Note that `n` may change on the second to last response or be fully omitted, depending on the server implementation.
-
 ### Listing Image Tags
 
 It may be necessary to list all of the tags under a given repository.
@@ -817,7 +747,6 @@ GET /v2/<name>/tags/list?n=<n from the request>&last=<last tag value from previo
 ```
 
 The above process should then be repeated until the `Link` header is no longer set in the response.
-The behavior of the `last` parameter, the provided response result, lexical ordering and encoding of the `Link` header are identical to that of catalog pagination.
 
 ### Deleting an Image
 
@@ -4598,42 +4527,3 @@ The error codes that may be included in the response body are enumerated below:
 | Code              | Message           | Description                                                         |
 |-------------------|-------------------|---------------------------------------------------------------------|
 | `TOOMANYREQUESTS` | too many requests | Returned when a client attempts to contact a service too many times |
-
-##### Catalog Fetch Paginated
-
-```
-GET /v2/_catalog?n=<integer>&last=<integer>
-```
-
-Return the specified portion of repositories.
-
-The following parameters should be specified on the request:
-
-| Name   | Kind  | Description                                                                                |
-|--------|-------|--------------------------------------------------------------------------------------------|
-| `n`    | query | Limit the number of entries in each response.It not present, all entries will be returned. |
-| `last` | query | Result set will include values lexically after last.                                       |
-
-###### On Success: OK
-
-```
-200 OK
-Content-Length: <length>
-Link: <<url>?n=<last n value>&last=<last entry from response>>; rel="next"
-Content-Type: application/json; charset=utf-8
-
-{
-	"repositories": [
-		<name>,
-		...
-	]
-	"next": "<url>?last=<name>&n=<last value of n>"
-}
-```
-
-The following headers will be returned with the response:
-
-| Name             | Description                                                            |
-|------------------|------------------------------------------------------------------------|
-| `Content-Length` | Length of the JSON response body.                                      |
-| `Link`           | RFC5988 compliant rel='next' with URL to next result set, if available |
