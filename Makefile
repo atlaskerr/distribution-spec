@@ -15,3 +15,6 @@ install.tools: .install.gitvalidation
 
 .install.gitvalidation:
 	go get -u github.com/vbatts/git-validation
+
+test-client:
+	go test ./client
