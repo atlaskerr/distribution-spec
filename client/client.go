@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 var (
@@ -15,14 +16,23 @@ var (
 
 	// ErrNoEndpoint is the error returned when no endpoint is defined in the
 	// Config struct
-	ErrNoEndpoint = errors.New("no endpoint provided to client")
+	ErrNoEndpoint      = errors.New("no endpoint provided to client")
+	ErrMissingUsername = errors.New("no username defined")
+	ErrMissingPassword = errors.New("no password defined")
 )
+
+var DefaultRequestTimeout = 5 * time.Second
+
+var DefaultTransport = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+}
 
 // Client is an interface that contains methods to interact with an registry
 // compliant with the OCI Distribution Specification.
 type Client interface {
 	SetEndpoint(url string) error
 	SetCredential(cred Credential)
+	//httpClient
 }
 
 // Config defines configuration parameters for the client.
@@ -37,25 +47,38 @@ type Config struct {
 }
 
 // New returns a new Client.
-func New(conf *Config) (Client, error) {
-	var c *client
+func New(conf Config) (Client, error) {
+	c := new(client)
 
-	if &conf.Endpoint == nil {
+	if conf.Endpoint == "" {
 		return nil, ErrNoEndpoint
 	}
 	c.SetEndpoint(conf.Endpoint)
 
-	basicAuth := (&conf.Username != nil) && (&conf.Password != nil)
-	tokenAuth := &conf.Token != nil
+	basicAuth := (conf.Username != "") || (conf.Password != "")
+	tokenAuth := conf.Token != ""
 	switch {
 	case basicAuth && tokenAuth:
 		return nil, ErrUserAndToken
 	case basicAuth:
-		cred := &BasicCredential{}
+		if conf.Username == "" {
+			return nil, ErrMissingUsername
+		}
+		if conf.Password == "" {
+			return nil, ErrMissingPassword
+		}
+		cred := &BasicCredential{
+			Username: conf.Username,
+			Password: conf.Password,
+		}
 		c.SetCredential(cred)
+		c.authEnabled = true
 	case tokenAuth:
-		cred := &TokenCredential{}
+		cred := &TokenCredential{
+			Token: conf.Token,
+		}
 		c.SetCredential(cred)
+		c.authEnabled = true
 	}
 	return c, nil
 }
@@ -69,8 +92,9 @@ type operation interface {
 }
 
 type client struct {
-	endpoint   url.URL
-	credential *Credential
+	endpoint    url.URL
+	authEnabled bool
+	credential  *Credential
 }
 
 func (c *client) SetCredential(cred Credential) {
@@ -86,6 +110,9 @@ func (c *client) SetEndpoint(endpoint string) error {
 	c.endpoint = *u
 	return nil
 }
+
+//func (c *client) Do(ctx context.Context, op operation) (resp *http.Response, err error) {
+//}
 
 // Credential defines a methods to inject credentials into an HTTP request.
 type Credential interface {
