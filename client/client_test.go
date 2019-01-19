@@ -2,6 +2,7 @@ package client
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -35,17 +36,32 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestTokenCredential(t *testing.T) {
-	cfg := Config{
-		Endpoint: "http://localhost",
-		Token:    "token",
+func TestCredential(t *testing.T) {
+	tt := []struct {
+		name string
+		Credential
+	}{
+		{"basic auth", &TokenCredential{"token"}},
+		{"token auth", &BasicCredential{"user", "pass"}},
 	}
-	c, _ := New(cfg)
-	req := new(http.Request)
-	req.Header = make(http.Header)
-	c.SetCredential(req)
-	authHeader := req.Header.Get("Authorization")
-	if authHeader == "" {
-		t.Fatalf("auth token not set in request")
+
+	for _, tc := range tt {
+		tf := func(t *testing.T) {
+			host, _ := url.Parse("http://localhost")
+			c := client{
+				endpoint:    *host,
+				authEnabled: true,
+				credential:  tc.Credential,
+			}
+			req := new(http.Request)
+			req.Header = make(http.Header)
+			c.SetCredential(req)
+			authHeader := req.Header.Get("Authorization")
+			if authHeader == "" {
+				t.Fatalf("auth token not set in request")
+			}
+		}
+		t.Run(tc.name, tf)
 	}
+
 }
