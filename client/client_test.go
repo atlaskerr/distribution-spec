@@ -1,6 +1,7 @@
 package client
 
 import (
+	"net/http"
 	"testing"
 )
 
@@ -31,5 +32,20 @@ func TestNewClient(t *testing.T) {
 			}
 		}
 		t.Run(tc.name, tf)
+	}
+}
+
+func TestTokenCredential(t *testing.T) {
+	cfg := Config{
+		Endpoint: "http://localhost",
+		Token:    "token",
+	}
+	c, _ := New(cfg)
+	req := new(http.Request)
+	req.Header = make(http.Header)
+	c.SetCredential(req)
+	authHeader := req.Header.Get("Authorization")
+	if authHeader == "" {
+		t.Fatalf("auth token not set in request")
 	}
 }

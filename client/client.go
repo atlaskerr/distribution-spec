@@ -31,7 +31,8 @@ var DefaultTransport = &http.Transport{
 // compliant with the OCI Distribution Specification.
 type Client interface {
 	SetEndpoint(url string) error
-	SetCredential(cred Credential)
+	NewCredential(cred Credential)
+	SetCredential(req *http.Request)
 	//httpClient
 }
 
@@ -71,13 +72,13 @@ func New(conf Config) (Client, error) {
 			Username: conf.Username,
 			Password: conf.Password,
 		}
-		c.SetCredential(cred)
+		c.NewCredential(cred)
 		c.authEnabled = true
 	case tokenAuth:
 		cred := &TokenCredential{
 			Token: conf.Token,
 		}
-		c.SetCredential(cred)
+		c.NewCredential(cred)
 		c.authEnabled = true
 	}
 	return c, nil
@@ -94,11 +95,15 @@ type operation interface {
 type client struct {
 	endpoint    url.URL
 	authEnabled bool
-	credential  *Credential
+	credential  Credential
 }
 
-func (c *client) SetCredential(cred Credential) {
-	c.credential = &cred
+func (c *client) NewCredential(cred Credential) {
+	c.credential = cred
+}
+
+func (c *client) SetCredential(req *http.Request) {
+	c.credential.setCredential(req)
 }
 
 func (c *client) SetEndpoint(endpoint string) error {
@@ -116,7 +121,7 @@ func (c *client) SetEndpoint(endpoint string) error {
 
 // Credential defines a methods to inject credentials into an HTTP request.
 type Credential interface {
-	Set(*http.Request)
+	setCredential(*http.Request)
 }
 
 // TokenCredential implements the Credential interface. Uses an OAuth2 token to
@@ -125,8 +130,8 @@ type TokenCredential struct {
 	Token string
 }
 
-// Set sets the authorization header of a request with an OAuth2 token.
-func (c *TokenCredential) Set(req *http.Request) {
+// SetCredential sets the authorization header of a request with an OAuth2 token.
+func (c *TokenCredential) setCredential(req *http.Request) {
 	bearer := strings.Join([]string{"Bearer", c.Token}, "")
 	req.Header.Set("Authorization", bearer)
 }
@@ -138,7 +143,7 @@ type BasicCredential struct {
 	Password string
 }
 
-// Set sets the authorization header of a request with a username and password.
-func (c *BasicCredential) Set(req *http.Request) {
+// SetCredential sets the authorization header of a request with a username and password.
+func (c *BasicCredential) setCredential(req *http.Request) {
 	req.SetBasicAuth(c.Username, c.Password)
 }
